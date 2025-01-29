@@ -1,24 +1,24 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ScreenshotMonitor.Data.Dto.Authentication;
+using ScreenshotMonitor.Data.Entities.Mapper;
 using ScreenshotMonitor.Data.Entities;
 using ScreenshotMonitor.Data.Repositories.Interfaces;
-using ScreenshotMonitor.Data.Entities.Mapper;
 
-[Route("api/admin")]
+[Route("api/employee")]
 [ApiController]
-public class AdminController(
+public class EmployeeController(
     IAuthRepository authRepository,
-    ILogger<AdminController> logger
+    ILogger<EmployeeController> logger
 ) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto user)
     {
-        var admin = user.ToUserEntity("Admin"); // Convert DTO to User entity
-        var token = await authRepository.RegisterAdmin(admin);
+        var employee = user.ToUserEntity("Employee"); // Convert DTO to User entity
+        var token = await authRepository.RegisterEmployee(employee);
         if (token == null)
-            return BadRequest("Failed to register admin.");
+            return BadRequest("Failed to register employee.");
 
         return Ok(new { Token = token });
     }
@@ -26,7 +26,7 @@ public class AdminController(
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
-        var token = await authRepository.LoginAdmin(loginDto.Email, loginDto.Password);
+        var token = await authRepository.LoginEmployee(loginDto.Email, loginDto.Password);
         if (token == null)
             return Unauthorized("Invalid credentials.");
 

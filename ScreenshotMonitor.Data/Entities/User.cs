@@ -23,7 +23,7 @@ namespace ScreenshotMonitor.Data.Entities
         [Required]
         public string PasswordHash { get; set; } // Hashed password
 
-        public UserRole Role { get; set; }
+        public string Role { get; set; }
 
         [MaxLength(50)]
         public string Designation { get; set; } // Only for Employees

@@ -28,7 +28,7 @@ namespace ScreenshotMonitor.Data.Entities
 
         public DateTime? EndDate { get; set; } // Project completion date
 
-        public ProjectStatus Status { get; set; } = ProjectStatus.Active; // Default: Active
+        public String Status { get; set; } // Default: Active
 
         // Relations
         public ICollection<ProjectEmployee> ProjectEmployees { get; set; } = new List<ProjectEmployee>();

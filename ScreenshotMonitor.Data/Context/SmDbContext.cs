@@ -9,7 +9,10 @@ namespace ScreenshotMonitor.Data.Context
     public class SmDbContext : DbContext
     {
         public SmDbContext(DbContextOptions<SmDbContext> options) : base(options) { }
+        SmDbContext(IConfiguration conf)
+        {
 
+        }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
