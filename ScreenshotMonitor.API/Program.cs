@@ -1,15 +1,31 @@
+using Microsoft.EntityFrameworkCore;
+using ScreenshotMonitor.Data.Context;
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Register DbContext
+var config = builder.Configuration;
+builder.Services.AddDbContext<SmDbContext>(options =>
+    options.UseNpgsql(config.GetConnectionString("SmDb")!));
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Ensure the database is created and migrations are applied
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<SmDbContext>();
+
+    // Ensure database is created if it doesn’t exist
+    dbContext.Database.EnsureCreated();
+
+    // Apply any pending migrations
+    dbContext.Database.Migrate();
+}
+
+// Configure middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -17,9 +33,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
