@@ -104,24 +104,52 @@ public class AuthRepository(
         return true;
     }
 
-    // JWT Token Generation
     private string CreateToken(User user)
     {
-        List<Claim> claims = new()
-        {
+        List<Claim> claims =
+        [
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Email, user.Email),
             new(ClaimTypes.Role, user.Role)
-        };
+        ];
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(conf.GetSection("JWT:Key").Value!));
+        var key =
+            new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    conf.GetSection("JWT:Key").Value!
+                )
+            );
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
         var token = new JwtSecurityToken(
-            issuer: "ssmonitor.pk",
+            issuer: "sehatmand.pk",
             claims: claims,
             expires: DateTime.Now.AddDays(30),
             signingCredentials: creds
         );
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+        return jwt;
     }
+    //// JWT Token Generation
+    //private string CreateToken(User user)
+    //{
+    //    List<Claim> claims =
+    //    [
+    //        new(ClaimTypes.NameIdentifier, user.Id),
+    //        new(ClaimTypes.Email, user.Email),
+    //        new(ClaimTypes.Role, user.Role),
+    //        //new Claim(JwtRegisteredClaimNames.Aud, "ScreenshotMonitor.Client")
+    //    ];
+
+    //    var key = new SymmetricSecurityKey(
+    //        Encoding.UTF8.GetBytes(conf.GetSection("JWT:Key").Value!));
+    //    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+    //    var token = new JwtSecurityToken(
+    //        issuer: "ssmonitor.pk",
+    //        claims: claims,
+    //        expires: DateTime.UtcNow.AddDays(30),
+    //        signingCredentials: creds
+    //    );
+    //    var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+    //    return jwt;
+    //}
 }

@@ -41,5 +41,7 @@ namespace ScreenshotMonitor.Data.Context
         public DbSet<ProjectEmployee> ProjectEmployees { get; set; }
         public DbSet<Session> Sessions { get; set; }
         public DbSet<Screenshot> Screenshots { get; set; }
+        public DbSet<SessionBackgroundApp> SessionBackgroundApps {  get; set; } 
+        public DbSet<SessionForegroundApp> SessionForegroundApps { get; set; }
     }
 }
