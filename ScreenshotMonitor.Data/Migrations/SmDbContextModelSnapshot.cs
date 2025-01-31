@@ -145,7 +145,7 @@ namespace ScreenshotMonitor.Data.Migrations
 
                     b.HasIndex("SessionId");
 
-                    b.ToTable("SessionBackgroundApp");
+                    b.ToTable("SessionBackgroundApps");
                 });
 
             modelBuilder.Entity("ScreenshotMonitor.Data.Entities.SessionForegroundApp", b =>
@@ -164,7 +164,7 @@ namespace ScreenshotMonitor.Data.Migrations
 
                     b.HasIndex("SessionId");
 
-                    b.ToTable("SessionForegroundApp");
+                    b.ToTable("SessionForegroundApps");
                 });
 
             modelBuilder.Entity("ScreenshotMonitor.Data.Entities.User", b =>
@@ -211,7 +211,8 @@ namespace ScreenshotMonitor.Data.Migrations
                 {
                     b.HasOne("ScreenshotMonitor.Data.Entities.User", "Admin")
                         .WithMany()
-                        .HasForeignKey("AdminId");
+                        .HasForeignKey("AdminId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Admin");
                 });
@@ -220,11 +221,13 @@ namespace ScreenshotMonitor.Data.Migrations
                 {
                     b.HasOne("ScreenshotMonitor.Data.Entities.User", "Employee")
                         .WithMany("ProjectEmployees")
-                        .HasForeignKey("EmployeeId");
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("ScreenshotMonitor.Data.Entities.Project", "Project")
                         .WithMany("ProjectEmployees")
-                        .HasForeignKey("ProjectId");
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Employee");
 
@@ -235,7 +238,8 @@ namespace ScreenshotMonitor.Data.Migrations
                 {
                     b.HasOne("ScreenshotMonitor.Data.Entities.Session", "Session")
                         .WithMany("Screenshots")
-                        .HasForeignKey("SessionId");
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Session");
                 });
@@ -244,11 +248,13 @@ namespace ScreenshotMonitor.Data.Migrations
                 {
                     b.HasOne("ScreenshotMonitor.Data.Entities.User", "Employee")
                         .WithMany("Sessions")
-                        .HasForeignKey("EmployeeId");
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("ScreenshotMonitor.Data.Entities.Project", "Project")
                         .WithMany()
-                        .HasForeignKey("ProjectId");
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Employee");
 
@@ -259,7 +265,8 @@ namespace ScreenshotMonitor.Data.Migrations
                 {
                     b.HasOne("ScreenshotMonitor.Data.Entities.Session", "Session")
                         .WithMany("BackgroundApps")
-                        .HasForeignKey("SessionId");
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Session");
                 });
@@ -268,7 +275,8 @@ namespace ScreenshotMonitor.Data.Migrations
                 {
                     b.HasOne("ScreenshotMonitor.Data.Entities.Session", "Session")
                         .WithMany("ForegroundApps")
-                        .HasForeignKey("SessionId");
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Session");
                 });

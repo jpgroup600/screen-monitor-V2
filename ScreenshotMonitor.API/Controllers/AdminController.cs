@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Build.Framework;
 
 [Route("api/admin")]
 [ApiController]
@@ -46,30 +47,43 @@ public class AdminController(
         return Ok(new { Token = token });
     }
 
-    [HttpGet("users")]
-    //[Authorize]
-    //[Authorize(Roles = "Admin")]
+    [HttpGet("all-users")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllUsers()
     {
         try
         {
             if (HttpContext.User.Identity is not ClaimsIdentity identity)
-                return BadRequest("SMTH WENT WRONG");
+            {
+                logger.LogWarning("Unauthorized access attempt: User identity is not a ClaimsIdentity.");
+                return BadRequest("Invalid user identity.");
+            }
 
             var claims = identity.Claims;
+            var userId = claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            logger.LogInformation($"User {userId} is attempting to fetch all users.");
+
             var users = await adminRepo.GetAllUsersAsync();
-            var id = claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier)?.Value;
-            return users.Count > 0 ? Ok(users) : NotFound("No users found.");
+
+            if (users.Count == 0)
+            {
+                logger.LogWarning("No users found in the database.");
+                return NotFound("No users found.");
+            }
+
+            logger.LogInformation($"Successfully retrieved {users.Count} users.");
+            return Ok(users);
         }
         catch (Exception e)
         {
-            return null;
+            logger.LogError(e, "An error occurred while fetching users.");
+            return StatusCode(500, "An error occurred while processing your request.");
         }
-    
-        
     }
 
-    [HttpGet("admins")]
+
+    [HttpGet("only-admins")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAdminsOnly()
     {
@@ -77,8 +91,8 @@ public class AdminController(
         return admins.Count > 0 ? Ok(admins) : NotFound("No admins found.");
     }
 
-    [HttpGet("employees")]
-    [Authorize(Roles = "Employee")]
+    [HttpGet("only-employees")]
+    [Authorize(Roles = "Employee, Admin")]
     public async Task<IActionResult> GetEmployeesOnly()
     {
         var employees = await adminRepo.GetEmployeesOnlyAsync();

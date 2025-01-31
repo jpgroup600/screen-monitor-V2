@@ -9,10 +9,65 @@ namespace ScreenshotMonitor.Data.Context
     public class SmDbContext : DbContext
     {
         public SmDbContext(DbContextOptions<SmDbContext> options) : base(options) { }
-        SmDbContext(IConfiguration conf)
-        {
+      
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // Project -> Admin (User)
+    modelBuilder.Entity<Project>()
+        .HasOne(p => p.Admin)
+        .WithMany()
+        .HasForeignKey(p => p.AdminId)
+        .OnDelete(DeleteBehavior.Restrict); // Prevent admin deletion from deleting all projects
 
-        }
+    // ProjectEmployee (many-to-many link table) - CASCADE DELETE
+    modelBuilder.Entity<ProjectEmployee>()
+        .HasOne(pe => pe.Project)
+        .WithMany(p => p.ProjectEmployees)
+        .HasForeignKey(pe => pe.ProjectId)
+        .OnDelete(DeleteBehavior.Cascade); // Deleting a project removes all ProjectEmployees
+    
+    modelBuilder.Entity<ProjectEmployee>()
+        .HasOne(pe => pe.Employee)
+        .WithMany(u => u.ProjectEmployees)
+        .HasForeignKey(pe => pe.EmployeeId)
+        .OnDelete(DeleteBehavior.Cascade); // Deleting an employee removes their ProjectEmployee records
+
+    // Session -> Employee (User)
+    modelBuilder.Entity<Session>()
+        .HasOne(s => s.Employee)
+        .WithMany(u => u.Sessions)
+        .HasForeignKey(s => s.EmployeeId)
+        .OnDelete(DeleteBehavior.Cascade); // Deleting a user deletes their sessions
+
+    // Session -> Project
+    modelBuilder.Entity<Session>()
+        .HasOne(s => s.Project)
+        .WithMany()
+        .HasForeignKey(s => s.ProjectId)
+        .OnDelete(DeleteBehavior.Cascade); // Deleting a project deletes all related sessions
+
+    // Screenshot -> Session
+    modelBuilder.Entity<Screenshot>()
+        .HasOne(sc => sc.Session)
+        .WithMany(s => s.Screenshots)
+        .HasForeignKey(sc => sc.SessionId)
+        .OnDelete(DeleteBehavior.Cascade); // Deleting a session deletes all screenshots
+
+    // SessionForegroundApp -> Session
+    modelBuilder.Entity<SessionForegroundApp>()
+        .HasOne(fg => fg.Session)
+        .WithMany(s => s.ForegroundApps)
+        .HasForeignKey(fg => fg.SessionId)
+        .OnDelete(DeleteBehavior.Cascade); // Deleting a session deletes all foreground apps
+
+    // SessionBackgroundApp -> Session
+    modelBuilder.Entity<SessionBackgroundApp>()
+        .HasOne(bg => bg.Session)
+        .WithMany(s => s.BackgroundApps)
+        .HasForeignKey(bg => bg.SessionId)
+        .OnDelete(DeleteBehavior.Cascade); // Deleting a session deletes all background apps
+}
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
