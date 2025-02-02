@@ -8,6 +8,7 @@ using ScreenshotMonitor.Data.Repositories.Interfaces;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
+using ScreenshotMonitor.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,7 @@ builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+/*builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = "https://localhost:7037";
@@ -45,6 +46,42 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
     });
 
+*/
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://localhost:7037";
+        options.Audience = "SehatMand.Client";
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey
+                (Encoding.UTF8.GetBytes(config.GetSection("JWT:Key").Value!)),
+            ClockSkew = TimeSpan.Zero
+        };
+
+        // 👇 THIS PART EXTRACTS THE TOKEN FROM SIGNALR REQUESTS
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+
+                // If the request is for SignalR, use the token from the query string
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/useractivityhub"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 builder.Services.AddAuthorization();
 
@@ -80,7 +117,11 @@ builder.Services.AddSwaggerGen(c => {
     });
 });
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
+
+app.UseAuthentication();  // Add Authentication middleware
 
 
 app.UseCors(x => x
@@ -125,5 +166,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.MapHub<UserActivityHub>("/useractivityhub");
 app.MapControllers();
 app.Run();

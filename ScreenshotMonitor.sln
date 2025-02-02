@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScreenshotMonitor.API", "Sc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScreenshotMonitor.Data", "ScreenshotMonitor.Data\ScreenshotMonitor.Data.csproj", "{994D6BC4-3964-417D-805D-1F05FB9D2881}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScreenshotMonitor.SignalR", "ScreenshotMonitor.SignalR\ScreenshotMonitor.SignalR.csproj", "{BC3A71F1-D465-4632-8737-F32AA0FBE207}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{994D6BC4-3964-417D-805D-1F05FB9D2881}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{994D6BC4-3964-417D-805D-1F05FB9D2881}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{994D6BC4-3964-417D-805D-1F05FB9D2881}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC3A71F1-D465-4632-8737-F32AA0FBE207}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC3A71F1-D465-4632-8737-F32AA0FBE207}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC3A71F1-D465-4632-8737-F32AA0FBE207}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC3A71F1-D465-4632-8737-F32AA0FBE207}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
