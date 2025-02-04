@@ -117,7 +117,9 @@ builder.Services.AddSwaggerGen(c => {
     });
 });
 
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddMessagePackProtocol();
+  
 
 var app = builder.Build();
 
@@ -167,5 +169,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.MapHub<UserActivityHub>("/useractivityhub");
+app.MapHub<ScreenHub>("/screenHub");
 app.MapControllers();
 app.Run();
