@@ -31,8 +31,8 @@ Make a copy of appsettings.json
     "Key": "JWT KEY HERE"
   }
 }
-
-## Features
+```
+### Features
 
 ### **Admin Features**
 - Register and log in using JWT authentication
