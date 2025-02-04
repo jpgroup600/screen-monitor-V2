@@ -5,6 +5,33 @@ This is a **Screen Monitoring System** built using **.NET with EF Core** and **P
 - A **desktop application** for employees that runs in the background, capturing screenshots at random intervals and tracking active/online time.
 - A **web portal** for the admin to view users' screens live, track work hours, and manage employees and projects.
 
+## Connect to Postgres DB
+To connect to database create appsettings.Development.json.
+Then add the Postgres Connection string to it.
+
+```shell
+cd ScreenshotMonitor.API/ 
+```
+
+```shell
+cp appsettings.json appsettings.Development.json
+```
+Make a copy of appsettings.json
+
+```json
+{
+  "ConnectionStrings": {
+    "SmDb": "CONNECTION STRING HERE" 
+  }
+}
+```
+```json
+{
+  "JWT": {
+    "Key": "JWT KEY HERE"
+  }
+}
+
 ## Features
 
 ### **Admin Features**
