@@ -151,7 +151,7 @@ using (var scope = app.Services.CreateScope())
         //dbContext.Database.EnsureCreated();
 
         // Apply any pending migrations
-        dbContext.Database.Migrate();
+        //dbContext.Database.Migrate();
     }
     catch (Exception ex)
     {
