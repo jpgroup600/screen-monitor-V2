@@ -11,7 +11,8 @@ public class EmployeeController(
     IAuthRepository authRepository,
     ILogger<EmployeeController> logger
 ) : ControllerBase
-{
+{ 
+    
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto user)
     {
