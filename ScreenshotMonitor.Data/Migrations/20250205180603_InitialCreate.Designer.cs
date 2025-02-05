@@ -12,8 +12,8 @@ using ScreenshotMonitor.Data.Context;
 namespace ScreenshotMonitor.Data.Migrations
 {
     [DbContext(typeof(SmDbContext))]
-    [Migration("20250131200745_UpdateDatabaseSchema")]
-    partial class UpdateDatabaseSchema
+    [Migration("20250205180603_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -122,6 +122,9 @@ namespace ScreenshotMonitor.Data.Migrations
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

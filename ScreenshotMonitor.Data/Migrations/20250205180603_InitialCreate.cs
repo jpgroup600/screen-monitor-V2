@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -20,7 +19,7 @@ namespace ScreenshotMonitor.Data.Migrations
                     FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
-                    Role = table.Column<int>(type: "integer", nullable: false),
+                    Role = table.Column<string>(type: "text", nullable: true),
                     Designation = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     PhoneNumber = table.Column<string>(type: "character varying(15)", maxLength: 15, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -41,7 +40,7 @@ namespace ScreenshotMonitor.Data.Migrations
                     AdminId = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -50,7 +49,8 @@ namespace ScreenshotMonitor.Data.Migrations
                         name: "FK_Projects_Users_AdminId",
                         column: x => x.AdminId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -69,12 +69,14 @@ namespace ScreenshotMonitor.Data.Migrations
                         name: "FK_ProjectEmployees_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ProjectEmployees_Users_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -87,8 +89,7 @@ namespace ScreenshotMonitor.Data.Migrations
                     StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ActiveDuration = table.Column<TimeSpan>(type: "interval", nullable: false),
-                    ForegroundApps = table.Column<List<string>>(type: "text[]", nullable: true),
-                    BackgroundApps = table.Column<List<string>>(type: "text[]", nullable: true)
+                    Status = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -97,12 +98,14 @@ namespace ScreenshotMonitor.Data.Migrations
                         name: "FK_Sessions_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Sessions_Users_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Users",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -121,7 +124,46 @@ namespace ScreenshotMonitor.Data.Migrations
                         name: "FK_Screenshots_Sessions_SessionId",
                         column: x => x.SessionId,
                         principalTable: "Sessions",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SessionBackgroundApps",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    SessionId = table.Column<string>(type: "text", nullable: true),
+                    AppName = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SessionBackgroundApps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SessionBackgroundApps_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SessionForegroundApps",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    SessionId = table.Column<string>(type: "text", nullable: true),
+                    AppName = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SessionForegroundApps", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SessionForegroundApps_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -145,6 +187,16 @@ namespace ScreenshotMonitor.Data.Migrations
                 column: "SessionId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SessionBackgroundApps_SessionId",
+                table: "SessionBackgroundApps",
+                column: "SessionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SessionForegroundApps_SessionId",
+                table: "SessionForegroundApps",
+                column: "SessionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Sessions_EmployeeId",
                 table: "Sessions",
                 column: "EmployeeId");
@@ -163,6 +215,12 @@ namespace ScreenshotMonitor.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Screenshots");
+
+            migrationBuilder.DropTable(
+                name: "SessionBackgroundApps");
+
+            migrationBuilder.DropTable(
+                name: "SessionForegroundApps");
 
             migrationBuilder.DropTable(
                 name: "Sessions");

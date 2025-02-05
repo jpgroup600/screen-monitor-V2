@@ -120,6 +120,9 @@ namespace ScreenshotMonitor.Data.Migrations
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Status")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EmployeeId");

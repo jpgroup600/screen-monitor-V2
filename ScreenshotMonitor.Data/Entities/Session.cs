@@ -25,7 +25,8 @@ namespace ScreenshotMonitor.Data.Entities
         public DateTime? EndTime { get; set; }
 
         public TimeSpan ActiveDuration { get; set; }
-
+        // New Status property to classify sessions
+        public string Status { get; set; } = "Active";
         // Relations
         public ICollection<Screenshot> Screenshots { get; set; } = new List<Screenshot>();
         public ICollection<SessionForegroundApp> ForegroundApps { get; set; } = new List<SessionForegroundApp>();

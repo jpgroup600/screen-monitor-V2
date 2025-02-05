@@ -148,7 +148,7 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("Database connection is successful.");
 
         // Ensure database is created if it doesn�t exist
-        dbContext.Database.EnsureCreated();
+        //dbContext.Database.EnsureCreated();
 
         // Apply any pending migrations
         dbContext.Database.Migrate();
