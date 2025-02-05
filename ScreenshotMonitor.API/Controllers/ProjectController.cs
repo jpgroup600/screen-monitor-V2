@@ -16,6 +16,22 @@ public class ProjectController(
     ILogger<ProjectController> logger
 ) : ControllerBase
 {
+    // Get Employees by ProjectId
+    [HttpGet("employees/{projectId}")]
+    public async Task<IActionResult> GetProjectEmployees( string projectId)
+    {
+        try
+        {
+            logger.LogInformation("Fetching project employees");
+            var employees = await projectRepo.GetEmployeesByProjectIdAsync(projectId);
+            return Ok(employees);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching employees");
+            return StatusCode(500, "An error occurred while fetching employees.");
+        }
+    }
     // ✅ Get all projects
     [HttpGet("all")]
     public async Task<IActionResult> GetAllProjects()
@@ -28,7 +44,7 @@ public class ProjectController(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error fetching all projects");
+            logger.LogError(ex, "Error fetching projects");
             return StatusCode(500, "An error occurred while fetching projects.");
         }
     }
@@ -196,6 +212,7 @@ public class ProjectController(
     }
     // ✅ Get projects assigned to a specific employee
     [HttpGet("employee/{employeeId}/project")]
+    
     public async Task<IActionResult> GetProjectsByEmployeeId(string employeeId)
     {
         try

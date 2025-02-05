@@ -26,6 +26,7 @@ public class UserActivityHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        
         var userEntry = OnlineUsers.FirstOrDefault(u => u.Value.ConnectionId == Context.ConnectionId);
         if (!string.IsNullOrEmpty(userEntry.Key))
         {

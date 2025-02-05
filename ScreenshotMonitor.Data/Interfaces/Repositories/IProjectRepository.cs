@@ -6,6 +6,7 @@ namespace ScreenshotMonitor.Data.Interfaces.Repositories;
 
 public interface IProjectRepository
 {
+    Task<IEnumerable<User>> GetEmployeesByProjectIdAsync(string projectId);
     Task<Project?> GetProjectByIdAsync(string projectId);
     Task<IEnumerable<Project>> GetAllProjectsAsync();
     Task<IEnumerable<Project>> GetProjectsByEmployeeIdAsync(string employeeId);

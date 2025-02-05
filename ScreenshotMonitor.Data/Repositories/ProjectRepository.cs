@@ -19,6 +19,32 @@ public class ProjectRepository(
 {
     private readonly SmDbContext _dbContext = dbContext;
     private readonly ILogger<ProjectRepository> _logger = logger;
+    public async Task<IEnumerable<User>> GetEmployeesByProjectIdAsync(string projectId)
+    {
+        try
+        {
+            var employees = await _dbContext.Users
+                .Where(u => u.ProjectEmployees.Any(pe => pe.ProjectId == projectId))
+                .AsNoTracking() // Optional: improves performance if no updates are needed
+                .ToListAsync();
+
+            if (employees == null || !employees.Any())
+            {
+                _logger.LogWarning($"No employees found for project {projectId}.");
+            }
+            else
+            {
+                _logger.LogInformation($"Retrieved {employees.Count} employees for project {projectId}.");
+            }
+            return employees;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving employees for project {projectId}: {ex.Message}");
+            return new List<User>();
+        }
+    }
+
 
     // ✅ Get project by ID
     public async Task<Project?> GetProjectByIdAsync(string projectId)
