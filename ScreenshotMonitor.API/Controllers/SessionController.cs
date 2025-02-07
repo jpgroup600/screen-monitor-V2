@@ -74,7 +74,7 @@ public class SessionController(
     /// <summary>
     /// Get all sessions for an employee in a project.
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Employee")]
     [HttpGet("get")]
     public async Task<IActionResult> GetSessions(
         [FromQuery] string employeeId, 
