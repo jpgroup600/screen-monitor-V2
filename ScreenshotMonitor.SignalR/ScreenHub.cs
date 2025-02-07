@@ -23,7 +23,7 @@ public class ScreenHub : Hub
         }
         await base.OnConnectedAsync();
     }
-
+    
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var userEntry = OnlineUsers.FirstOrDefault(u => u.Value.ConnectionId == Context.ConnectionId);

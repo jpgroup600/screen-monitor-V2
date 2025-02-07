@@ -46,6 +46,37 @@ public class SessionRepository(
             throw;
         }
     }
+    public async Task<string?> EndSessionAutoOnDisconnectAsync(string employeeId, string status)
+    {
+        try
+        {
+            var projectId = await _dbContext.Sessions
+                .Where(s => s.EmployeeId == employeeId && s.Status == status)
+                .OrderByDescending(s => s.StartTime) // Get the latest matching session
+                .Select(s => s.ProjectId)
+                .FirstOrDefaultAsync(); // Fetch the first matching ProjectId
+
+            if (projectId == null)
+            {
+                _logger.LogWarning("No project found for Employee {EmployeeId} with Status {Status}", employeeId, status);
+                return null; // No project found
+            }
+
+            // If status is "Active", call EndSessionAsync
+            if (status == "Active")
+            {
+                await EndSessionAsync(employeeId, projectId);
+                _logger.LogInformation("Ended active session for Employee {EmployeeId} in Project {ProjectId}", employeeId, projectId);
+            }
+
+            return projectId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching ProjectId and ending session for Employee {EmployeeId} with Status {Status}", employeeId, status);
+            throw;
+        }
+    }
 
     public async Task<bool> EndSessionAsync(string employeeId, string projectId)
     {
@@ -77,21 +108,27 @@ public class SessionRepository(
         }
     }
 
-    public async Task<IEnumerable<Session>> GetSessionsAsync(string employeeId, string projectId)
+    public async Task<IEnumerable<Session>> GetSessionsByStatusAsync(string employeeId, string projectId, string status = null)
     {
         try
         {
-            return await _dbContext.Sessions
-                .Where(s => s.EmployeeId == employeeId && s.ProjectId == projectId)
-                .OrderByDescending(s => s.StartTime)
-                .ToListAsync();
+            var query = _dbContext.Sessions
+                .Where(s => s.EmployeeId == employeeId && s.ProjectId == projectId);
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(s => s.Status == status);
+            }
+
+            return await query.OrderByDescending(s => s.StartTime).ToListAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching sessions for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
+            _logger.LogError(ex, "Error fetching sessions for Employee {EmployeeId} on Project {ProjectId} with Status {Status}", employeeId, projectId, status);
             throw;
         }
     }
+
 
     public async Task<bool> DeleteSessionsAsync(string employeeId, string projectId)
     {

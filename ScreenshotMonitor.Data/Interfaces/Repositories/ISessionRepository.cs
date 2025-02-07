@@ -8,6 +8,8 @@ public interface ISessionRepository
 {
     Task<Session> StartSessionAsync(string employeeId, string projectId);
     Task<bool> EndSessionAsync(string employeeId, string projectId);
-    Task<IEnumerable<Session>> GetSessionsAsync(string employeeId, string projectId);
+    Task<string?> EndSessionAutoOnDisconnectAsync(string employeeId, string status);
+
+    Task<IEnumerable<Session>> GetSessionsByStatusAsync(string employeeId, string projectId,string status = null);
     Task<bool> DeleteSessionsAsync(string employeeId, string projectId);
 }
