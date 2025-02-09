@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ScreenshotMonitor.Data.Context;
@@ -11,9 +12,11 @@ using ScreenshotMonitor.Data.Context;
 namespace ScreenshotMonitor.Data.Migrations
 {
     [DbContext(typeof(SmDbContext))]
-    partial class SmDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250209134349_AddSessionAppAttributes")]
+    partial class AddSessionAppAttributes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,9 +156,6 @@ namespace ScreenshotMonitor.Data.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("text");
 
-                    b.Property<TimeSpan>("TotalUsageTime")
-                        .HasColumnType("interval");
-
                     b.HasKey("Id");
 
                     b.HasIndex("SessionId");
@@ -183,9 +183,6 @@ namespace ScreenshotMonitor.Data.Migrations
 
                     b.Property<string>("Status")
                         .HasColumnType("text");
-
-                    b.Property<TimeSpan>("TotalUsageTime")
-                        .HasColumnType("interval");
 
                     b.HasKey("Id");
 

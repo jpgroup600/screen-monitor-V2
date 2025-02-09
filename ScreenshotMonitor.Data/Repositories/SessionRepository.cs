@@ -21,12 +21,25 @@ public class SessionRepository(
     private readonly SmDbContext _dbContext = dbContext;
     private readonly ILogger<SessionRepository> _logger = logger;
 
-    public async Task<Session> StartSessionAsync(string employeeId, string projectId)
+    public async Task<Session?> StartSessionAsync(string employeeId, string projectId)
     {
         try
         {
+            // 🔍 Check for an existing active session
+            var existingSession = await _dbContext.Sessions
+                .Where(s => s.EmployeeId == employeeId && s.Status == "Active")
+                .FirstOrDefaultAsync();
+
+            if (existingSession != null)
+            {
+                _logger.LogInformation("Auto-ending previous session for Employee {EmployeeId} before starting a new one.", employeeId);
+                await EndSessionAsync(employeeId, existingSession.ProjectId);
+            }
+
+            // ✅ Start a new session after ending the previous one
             var session = new Session
             {
+                Id = Guid.NewGuid().ToString(),
                 EmployeeId = employeeId,
                 ProjectId = projectId,
                 StartTime = DateTime.UtcNow,
@@ -46,7 +59,38 @@ public class SessionRepository(
             throw;
         }
     }
-    public async Task<string?> EndSessionAutoOnDisconnectAsync(string employeeId, string status)
+    public async Task<string> EndSessionAutoOnDisconnectAsync(string employeeId, string status)
+    {
+        try
+        {
+            var activeSessions = await _dbContext.Sessions
+                .Where(s => s.EmployeeId == employeeId && s.Status == status)
+                .ToListAsync();
+
+            if (!activeSessions.Any())
+            {
+                _logger.LogWarning("No active sessions found for Employee {EmployeeId} with Status {Status}", employeeId, status);
+                return "No active sessions found."; // Indicate no sessions were ended
+            }
+
+            foreach (var session in activeSessions)
+            {
+                await EndSessionAsync(employeeId, session.ProjectId);
+            }
+
+            _logger.LogInformation("Successfully ended all active sessions for Employee {EmployeeId}", employeeId);
+            return "Successfully ended all active sessions.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error ending active sessions for Employee {EmployeeId} with Status {Status}", employeeId, status);
+            return "An error occurred while ending sessions."; // Return an error message
+        }
+    }
+
+
+
+    /*public async Task<string?> EndSessionAutoOnDisconnectAsync(string employeeId, string status)
     {
         try
         {
@@ -76,9 +120,9 @@ public class SessionRepository(
             _logger.LogError(ex, "Error fetching ProjectId and ending session for Employee {EmployeeId} with Status {Status}", employeeId, status);
             throw;
         }
-    }
+    }*/
 
-    public async Task<bool> EndSessionAsync(string employeeId, string projectId)
+    /*public async Task<bool> EndSessionAsync(string employeeId, string projectId)
     {
         try
         {
@@ -106,7 +150,51 @@ public class SessionRepository(
             _logger.LogError(ex, "Error ending session for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
             throw;
         }
+    }*/
+    public async Task<bool> EndSessionAsync(string employeeId, string projectId)
+    {
+        try
+        {
+            var session = await _dbContext.Sessions
+                .Where(s => s.EmployeeId == employeeId && s.ProjectId == projectId && s.Status == "Active")
+                .OrderByDescending(s => s.StartTime)
+                .FirstOrDefaultAsync();
+
+            if (session == null)
+            {
+                _logger.LogWarning("No active session found for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
+                return false;
+            }
+
+            // ** Step 1: Find and End Active Foreground Apps **
+            var activeApps = await _dbContext.SessionForegroundApps
+                .Where(a => a.SessionId == session.Id && a.Status == "Active")
+                .ToListAsync();
+
+            foreach (var app in activeApps)
+            {
+                app.Status = "Inactive";
+                app.EndTime = DateTime.UtcNow;
+                app.TotalUsageTime = app.EndTime.Value - app.StartTime;
+            }
+
+            // ** Step 2: End the Session **
+            session.EndTime = DateTime.UtcNow;
+            session.ActiveDuration = session.EndTime.Value - session.StartTime;
+            session.Status = "Complete";
+
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("Session and all active foreground apps ended for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error ending session for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
+            throw;
+        }
     }
+
 
     public async Task<IEnumerable<Session>> GetSessionsByStatusAsync(string employeeId, string projectId, string status = null)
     {

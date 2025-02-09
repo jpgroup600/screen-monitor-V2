@@ -21,6 +21,12 @@ namespace ScreenshotMonitor.Data.Entities
 
         [Required]
         public string AppName { get; set; }
+
+        // New Attributes
+        public string Status { get; set; } // Active, Inactive, etc.
+        public DateTime StartTime { get; set; } // When the app was first detected
+        public DateTime? EndTime { get; set; } // When the app was last detected
+        public TimeSpan TotalUsageTime { get; set; } 
     }
 
 }

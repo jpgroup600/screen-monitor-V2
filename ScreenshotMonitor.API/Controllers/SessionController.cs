@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ScreenshotMonitor.Data.Dto.Session;
@@ -14,20 +15,25 @@ public class SessionController(
 {
     private readonly ISessionRepository _sessionRepo = sessionRepo;
     private readonly ILogger<SessionController> _logger = logger;
-
+    private string GetEmployeeIdFromClaims()
+    {
+        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("Employee ID not found in claims.");
+    }
     /// <summary>
     /// Start a new session for an employee in a project.
     /// </summary>
     [Authorize(Roles = "Employee,Admin")]
     [HttpPost("start")]
     public async Task<IActionResult> StartSession([FromBody] StartSessionRequestDto request)
-    {
+    {            
+        string employeeId = GetEmployeeIdFromClaims();
+
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
         try
         {
-            var session = await _sessionRepo.StartSessionAsync(request.EmployeeId, request.ProjectId);
+            var session = await _sessionRepo.StartSessionAsync(employeeId, request.ProjectId);
             
             var response = new SessionResponseDto
             {
@@ -44,7 +50,7 @@ public class SessionController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start session for Employee {EmployeeId} in Project {ProjectId}", request.EmployeeId, request.ProjectId);
+            _logger.LogError(ex, "Failed to start session for Employee {EmployeeId} in Project {ProjectId}", employeeId, request.ProjectId);
             return StatusCode(500, "An error occurred while starting the session.");
         }
     }
@@ -56,17 +62,19 @@ public class SessionController(
     [HttpPost("end")]
     public async Task<IActionResult> EndSession([FromBody] EndSessionRequestDto request)
     {
+        string employeeId = GetEmployeeIdFromClaims();
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
+        
         try
         {
-            var success = await _sessionRepo.EndSessionAsync(request.EmployeeId, request.ProjectId);
+            
+            var success = await _sessionRepo.EndSessionAsync(employeeId, request.ProjectId);
             return success ? Ok("Session ended successfully.") : NotFound("No active session found.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to end session for Employee {EmployeeId} in Project {ProjectId}", request.EmployeeId, request.ProjectId);
+            _logger.LogError(ex, "Failed to end session for Employee {EmployeeId} in Project {ProjectId}", employeeId, request.ProjectId);
             return StatusCode(500, "An error occurred while ending the session.");
         }
     }

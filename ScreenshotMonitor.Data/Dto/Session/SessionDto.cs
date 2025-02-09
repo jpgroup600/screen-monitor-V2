@@ -6,13 +6,11 @@ namespace ScreenshotMonitor.Data.Dto.Session;
 
 public class StartSessionRequestDto
 {
-    [Required] public string EmployeeId { get; set; }
     [Required] public string ProjectId { get; set; }
 }
 
 public class EndSessionRequestDto
 {
-    [Required] public string EmployeeId { get; set; }
     [Required] public string ProjectId { get; set; }
 }
 
