@@ -87,70 +87,7 @@ public class SessionRepository(
             return "An error occurred while ending sessions."; // Return an error message
         }
     }
-
-
-
-    /*public async Task<string?> EndSessionAutoOnDisconnectAsync(string employeeId, string status)
-    {
-        try
-        {
-            var projectId = await _dbContext.Sessions
-                .Where(s => s.EmployeeId == employeeId && s.Status == status)
-                .OrderByDescending(s => s.StartTime) // Get the latest matching session
-                .Select(s => s.ProjectId)
-                .FirstOrDefaultAsync(); // Fetch the first matching ProjectId
-
-            if (projectId == null)
-            {
-                _logger.LogWarning("No project found for Employee {EmployeeId} with Status {Status}", employeeId, status);
-                return null; // No project found
-            }
-
-            // If status is "Active", call EndSessionAsync
-            if (status == "Active")
-            {
-                await EndSessionAsync(employeeId, projectId);
-                _logger.LogInformation("Ended active session for Employee {EmployeeId} in Project {ProjectId}", employeeId, projectId);
-            }
-
-            return projectId;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching ProjectId and ending session for Employee {EmployeeId} with Status {Status}", employeeId, status);
-            throw;
-        }
-    }*/
-
-    /*public async Task<bool> EndSessionAsync(string employeeId, string projectId)
-    {
-        try
-        {
-            var session = await _dbContext.Sessions
-                .Where(s => s.EmployeeId == employeeId && s.ProjectId == projectId && s.Status == "Active")
-                .OrderByDescending(s => s.StartTime)
-                .FirstOrDefaultAsync();
-
-            if (session == null)
-            {
-                _logger.LogWarning("No active session found for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
-                return false;
-            }
-
-            session.EndTime = DateTime.UtcNow;
-            session.ActiveDuration = session.EndTime.Value - session.StartTime;
-            session.Status = "Complete";
-
-            await _dbContext.SaveChangesAsync();
-            _logger.LogInformation("Session ended for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error ending session for Employee {EmployeeId} on Project {ProjectId}", employeeId, projectId);
-            throw;
-        }
-    }*/
+    
     public async Task<bool> EndSessionAsync(string employeeId, string projectId)
     {
         try

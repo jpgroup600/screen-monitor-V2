@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ScreenshotMonitor.Data.Context;
+using ScreenshotMonitor.Data.Dto.Screenshot;
 using ScreenshotMonitor.Data.Entities;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
 
@@ -87,76 +88,7 @@ public class ScreenshotRepository(
     }
 }
 
-
-    /*public async Task<List<string>> FetchScreenshotsBySessionIdAsync(string sessionId)
-    {
-        try
-        {
-            var screenshots = await _dbContext.Screenshots
-                .Where(s => s.SessionId == sessionId)
-                .OrderBy(s => s.CapturedAt)
-                .Select(s => s.FilePath)
-                .ToListAsync();
-
-            if (!screenshots.Any())
-            {
-                _logger.LogWarning("No screenshots found for Session {SessionId}.", sessionId);
-                return new List<string>();
-            }
-
-            _logger.LogInformation("Fetched {Count} screenshots for Session {SessionId}.", screenshots.Count, sessionId);
-            return screenshots;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching screenshots for Session {SessionId}.", sessionId);
-            return new List<string>();
-        }
-    }*/
-    /*public async Task<List<IFormFile>> FetchScreenshotsBySessionIdAsync(string sessionId)
-    {
-        try
-        {
-            var screenshots = await _dbContext.Screenshots
-                .Where(s => s.SessionId == sessionId)
-                .ToListAsync();
-
-            if (!screenshots.Any())
-            {
-                _logger.LogWarning("No screenshots found for SessionId {SessionId}", sessionId);
-                return new List<IFormFile>(); // Return empty list
-            }
-
-            var screenshotFiles = new List<IFormFile>();
-
-            foreach (var screenshot in screenshots)
-            {
-                string filePath = screenshot.FilePath;
-
-                if (!System.IO.File.Exists(filePath))
-                {
-                    _logger.LogWarning("Screenshot file does not exist at path: {FilePath}", filePath);
-                    continue; // Skip missing files
-                }
-
-                var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-                var formFile = new FormFile(fileStream, 0, fileStream.Length, "file", Path.GetFileName(filePath))
-                {
-                    Headers = new HeaderDictionary(),
-                    ContentType = GetContentType(filePath)
-                };
-
-                screenshotFiles.Add(formFile);
-            }
-
-            return screenshotFiles;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching screenshots for SessionId {SessionId}", sessionId);
-            throw;
-        }
-    }*/
+    
     public async Task<List<string>> FetchScreenshotsBySessionIdAsync(string sessionId)
     {
         try
@@ -183,6 +115,37 @@ public class ScreenshotRepository(
         }
     }
 
+    public async Task<List<ScreenshotDto>> GetScreenshotsBySessionIdAsync(string sessionId)
+    {
+        try
+        {
+            // The directory where all screenshots are stored
+            if (!Directory.Exists(_storagePath))
+            {
+                _logger.LogWarning("No screenshot directory found at: {StoragePath}", _storagePath);
+                return new List<ScreenshotDto>();
+            }
+
+            // Search for images in the main directory that start with sessionId
+            var imageFiles = Directory.GetFiles(_storagePath, $"{sessionId}_*.*") // Match sessionId prefix
+                .Where(file => file.EndsWith(".png") || file.EndsWith(".jpg") || file.EndsWith(".jpeg"))
+                .Select(file => new ScreenshotDto()
+                {
+                    FilePath = file, // Full file path
+                    FileName = Path.GetFileName(file), // Extract filename only
+                    CreatedAt = File.GetCreationTime(file) // Get creation time
+                })
+                .ToList();
+
+            _logger.LogInformation("Fetched {Count} screenshots for session: {SessionId}", imageFiles.Count, sessionId);
+            return imageFiles;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching screenshots for session: {SessionId}", sessionId);
+            throw;
+        }
+    }
 
 
 // Helper method to get MIME type
