@@ -14,6 +14,7 @@ namespace ScreenshotMonitor.Data.Interfaces.Repositories
         Task<List<User>> GetAdminsOnlyAsync();
         Task<List<User>> GetEmployeesOnlyAsync();
         Task<User?> GetUserByIdAsync(string userId);
+        Task<List<User>> UpdateTotalOnlineTimeAndGetAllEmployeesAsync();
         Task<bool> DeleteUserAsync(Guid userId);
     }
 

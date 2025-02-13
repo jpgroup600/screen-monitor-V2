@@ -63,6 +63,41 @@ namespace ScreenshotMonitor.Data.Repositories
                 throw;
             }
         }
+        public async Task<List<User>> UpdateTotalOnlineTimeAndGetAllEmployeesAsync()
+        {
+            try
+            {
+                // Get all employees with their sessions
+                var employees = await dbContext.Users
+                    .Include(u => u.Sessions)
+                    .Where(u => u.Role == "Employee")
+                    .ToListAsync();
+
+                // Loop through each employee and calculate TotalOnlineTime
+                foreach (var employee in employees)
+                {
+                    // Sum ActiveDuration of all sessions for this employee
+                    var totalActiveDuration = employee.Sessions
+                        .Where(s => s.ActiveDuration != null)
+                        .Select(s => s.ActiveDuration)
+                        .Aggregate(TimeSpan.Zero, (acc, duration) => acc.Add(duration));
+
+                    // Update TotalOnlineTime
+                    employee.TotalOnlineTime = totalActiveDuration;
+                }
+
+                // Save changes to DB
+                await dbContext.SaveChangesAsync();
+
+                // Return updated list of employee profiles
+                return employees;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error updating TotalOnlineTime for all employees");
+                throw;
+            }
+        }
 
         // Fetch a single user by ID
         public async Task<User?> GetUserByIdAsync(string userId)

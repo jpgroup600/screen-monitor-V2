@@ -90,12 +90,15 @@ public class AdminController(
         var admins = await adminRepo.GetAdminsOnlyAsync();
         return admins.Count > 0 ? Ok(admins) : NotFound("No admins found.");
     }
-
+    
     [HttpGet("only-employees")]
     [Authorize(Roles = "Employee, Admin")]
     public async Task<IActionResult> GetEmployeesOnly()
     {
+        /*
         var employees = await adminRepo.GetEmployeesOnlyAsync();
+        */
+        var employees = await adminRepo.UpdateTotalOnlineTimeAndGetAllEmployeesAsync();
         return employees.Count > 0 ? Ok(employees) : NotFound("No employees found.");
     }
 
