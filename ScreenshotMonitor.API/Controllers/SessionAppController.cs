@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ScreenshotMonitor.Data.Dto.Project;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
 
 namespace ScreenshotMonitor.API.Controllers;
@@ -23,40 +24,40 @@ public class SessionForegroundAppController : ControllerBase
     {
         return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("Employee ID not found in claims.");
     }
-
     [HttpPost("start")]
     [Authorize(Roles = "Employee")]
-    public async Task<IActionResult> StartForegroundApp([FromBody] string appName)
+    public async Task<IActionResult> StartForegroundApp([FromBody] AppNameDto appNameDto)
     {
         try
         {
             var employeeId = GetEmployeeIdFromClaims();
-            var result = await _repository.StartForegroundAppAsync(appName, employeeId);
+            var result = await _repository.StartForegroundAppAsync(appNameDto.AppName, employeeId);
             return result ? Ok("Foreground app started successfully.") : BadRequest("Failed to start foreground app.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error starting foreground app '{AppName}'", appName);
+            _logger.LogError(ex, "Error starting foreground app '{AppName}'", appNameDto.AppName);
             return StatusCode(500, "An error occurred while starting the foreground app.");
         }
     }
-    
+
     [HttpPost("end")]
     [Authorize(Roles = "Employee")]
-    public async Task<IActionResult> EndForegroundApp([FromBody] string appName)
+    public async Task<IActionResult> EndForegroundApp([FromBody] AppNameDto appNameDto)
     {
         try
         {
             var employeeId = GetEmployeeIdFromClaims();
-            var result = await _repository.EndForegroundAppAsync(appName, employeeId);
+            var result = await _repository.EndForegroundAppAsync(appNameDto.AppName, employeeId);
             return result ? Ok("Foreground app ended successfully.") : BadRequest("Failed to end foreground app.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error ending foreground app '{AppName}'", appName);
+            _logger.LogError(ex, "Error ending foreground app '{AppName}'", appNameDto.AppName);
             return StatusCode(500, "An error occurred while ending the foreground app.");
         }
     }
+    
 
     [HttpGet("all")]
     [Authorize(Roles = "Employee,Admin")]
