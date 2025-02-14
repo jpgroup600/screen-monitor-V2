@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ScreenshotMonitor.Data.Dto.Authentication;
 using ScreenshotMonitor.Data.Entities.Mapper;
@@ -12,7 +14,10 @@ public class EmployeeController(
     ILogger<EmployeeController> logger
 ) : ControllerBase
 { 
-    
+    private string GetEmployeeIdFromClaims()
+    {
+        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("Employee ID not found in claims.");
+    }
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto user)
     {
@@ -27,10 +32,33 @@ public class EmployeeController(
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
-        var token = await authRepository.LoginEmployee(loginDto.Email, loginDto.Password);
-        if (token == null)
+        // Authenticate the user and get AuthResult
+        var result = await authRepository.LoginEmployee(loginDto.Email, loginDto.Password);
+        if (result == null)
             return Unauthorized("Invalid credentials.");
 
-        return Ok(new { Token = token });
+        // Return Token and UserId
+        return Ok(new 
+        { 
+            Token = result.Token,
+            UserId = result.UserId
+        });
+    }
+
+    // New Route: Get Logged In User Id
+    [HttpGet("current-user-id")]
+    [Authorize] // Requires user to be authenticated
+    public IActionResult GetCurrentUserId()
+    {
+        try
+        {
+            var userId = GetEmployeeIdFromClaims();
+            return Ok(new { UserId = userId });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            logger.LogWarning(ex.Message);
+            return Unauthorized(ex.Message);
+        }
     }
 }

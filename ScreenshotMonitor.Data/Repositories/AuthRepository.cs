@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using ScreenshotMonitor.Data.Context;
+using ScreenshotMonitor.Data.Dto.Authentication;
 using ScreenshotMonitor.Data.Entities;
 using ScreenshotMonitor.Data.Repositories.Interfaces;
 
@@ -82,7 +83,7 @@ public class AuthRepository(
     }
 
     // Login Employee
-    public async Task<string?> LoginEmployee(string email, string password)
+    public async Task<AuthResult?> LoginEmployee(string email, string password)
     {
         var employee = await dbContext.Users.FirstOrDefaultAsync(u => u.Email == email && u.Role == "Employee");
         if (employee == null || !BCrypt.Net.BCrypt.Verify(password, employee.PasswordHash))
@@ -90,8 +91,18 @@ public class AuthRepository(
             logger.LogWarning("Invalid employee login attempt.");
             return null;
         }
-        return CreateToken(employee);
+
+        // Generate token
+        var token = CreateToken(employee);
+
+        // Return both Token and UserId
+        return new AuthResult
+        {
+            Token = token,
+            UserId = employee.Id
+        };
     }
+
 
     // Forgot Password
     public async Task<bool> ForgotPassword(string dtoEmail, string dtoNewPassword, string dtoPhoneNumber)
