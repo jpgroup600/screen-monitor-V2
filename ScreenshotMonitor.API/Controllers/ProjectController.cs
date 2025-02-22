@@ -9,7 +9,6 @@ using ScreenshotMonitor.Data.Interfaces.Repositories;
 namespace ScreenshotMonitor.API.Controllers;
 
 [Route("api/project")]
-[Authorize(Roles = "Admin")]
 [ApiController]
 public class ProjectController(
     IProjectRepository projectRepo,
@@ -18,6 +17,7 @@ public class ProjectController(
 {
     // Get Employees by ProjectId
     [HttpGet("employees/{projectId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetProjectEmployees( string projectId)
     {
         try
@@ -34,6 +34,7 @@ public class ProjectController(
     }
     // ✅ Get all projects
     [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetAllProjects()
     {
         try
@@ -51,6 +52,7 @@ public class ProjectController(
 
     // ✅ Get a project by ID
     [HttpGet("{projectId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetProjectById(string projectId)
     {
         try
@@ -75,6 +77,7 @@ public class ProjectController(
    
     // ✅ Create a new project
     [HttpPost("")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateProject([FromBody] CreateProjectDto createProjectDto)
     {
         try
@@ -117,6 +120,7 @@ public class ProjectController(
 
     // ✅ Delete a project
     [HttpDelete("{projectId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProject(string projectId)
     {
         try
@@ -161,6 +165,7 @@ public class ProjectController(
 
     // ✅ Add an employee to a project
     [HttpPost("{projectId}/{employeeId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AddEmployeeToProject(string projectId, string employeeId)
     {
         
@@ -188,6 +193,7 @@ public class ProjectController(
 
     // ✅ Remove an employee from a project
     [HttpDelete("{projectId}/employee/{employeeId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> RemoveEmployeeFromProject(string projectId, string employeeId)
     {
         try
@@ -212,7 +218,7 @@ public class ProjectController(
     }
     // ✅ Get projects assigned to a specific employee
     [HttpGet("employee/{employeeId}/project")]
-    
+    [Authorize(Roles = "Admin,Employee")]
     public async Task<IActionResult> GetProjectsByEmployeeId(string employeeId)
     {
         try
