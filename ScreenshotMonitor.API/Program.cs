@@ -8,6 +8,7 @@ using ScreenshotMonitor.Data.Repositories.Interfaces;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
+using ScreenshotMonitor.Data.Interfaces;
 using ScreenshotMonitor.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +30,8 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 builder.Services.AddScoped<ISessionAppsRepository, SessionAppsRepository>();
 builder.Services.AddScoped<IScreenshotRepository, ScreenshotRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
