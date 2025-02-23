@@ -108,6 +108,9 @@ var app = builder.Build();
 
 app.UseAuthentication();  // Add Authentication middleware
 
+var storagePath = builder.Configuration["FileStorage:UploadPath"] ?? "/var/www/Uploads/";
+Directory.CreateDirectory(storagePath); // Ensure the folder exists
+
 
 app.UseCors(x => x
     .AllowAnyMethod()
