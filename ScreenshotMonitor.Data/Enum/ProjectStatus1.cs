@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ScreenshotMonitor.Data.Enum
 {
-    public enum ProjectStatus
+    public enum ProjectStatus1
     {
         Active,
         Completed,
