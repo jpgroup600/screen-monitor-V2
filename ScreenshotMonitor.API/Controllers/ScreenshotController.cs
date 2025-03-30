@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ScreenshotMonitor.Data.Dto.Project;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
 
 namespace ScreenshotMonitor.API.Controllers;
@@ -19,6 +20,28 @@ public class ScreenshotController(
     {
         return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("Employee ID not found in claims.");
     }
+    
+    [Authorize(Roles = "Admin")]
+    [HttpPost("recent-screenshots")]
+    public async Task<IActionResult> GetRecentScreenshots([FromBody] ScreenshotRequestDto request)
+    {
+        if (request == null || request.EmployeeIds == null || !request.EmployeeIds.Any())
+        {
+            _logger.LogWarning("Invalid request: Employee IDs list is empty or missing.");
+            return BadRequest(new { message = "Employee IDs list cannot be empty." });
+        }
+
+        var result = await _screenshotRepo.GetRecentScreenshotsAsync(request.EmployeeIds);
+
+        if (!result.Any())
+        {
+            _logger.LogInformation("No recent screenshots found for the provided employees.");
+            return NotFound(new { message = "No recent screenshots found for the provided employees." });
+        }
+
+        return Ok(result);
+    }
+
 
     [HttpPost("upload")]
     [Authorize(Roles = "Employee")]

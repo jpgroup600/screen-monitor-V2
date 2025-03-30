@@ -20,6 +20,61 @@ public class SessionRepository(
 {
     private readonly SmDbContext _dbContext = dbContext;
     private readonly ILogger<SessionRepository> _logger = logger;
+    public async Task<List<string>> GetActiveEmployeeIdsAsync()
+    {
+        var activeEmployeeIds = await _dbContext.Sessions
+            .Where(s => s.Status == "Active")
+            .Select(s => s.EmployeeId)
+            .Distinct()
+            .ToListAsync();
+
+        if (!activeEmployeeIds.Any())
+        {
+            _logger.LogWarning("No employees with active sessions found.");
+        }
+
+        return activeEmployeeIds;
+    }
+    public async Task<bool> DeleteAllSessionsByEmployeeIdAsync(string employeeId)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting all sessions for Employee ID: {EmployeeId}", employeeId);
+
+            var sessions = await _dbContext.Sessions
+                .Where(s => s.EmployeeId == employeeId)
+                .Include(s => s.Screenshots)
+                .Include(s => s.ForegroundApps)
+                .Include(s => s.BackgroundApps)
+                .ToListAsync();
+
+            if (sessions == null || !sessions.Any())
+            {
+                _logger.LogWarning("No sessions found for Employee ID: {EmployeeId}", employeeId);
+                return false;
+            }
+
+            foreach (var session in sessions)
+            {
+                _logger.LogInformation("Deleting session ID: {SessionId}", session.Id);
+
+                _dbContext.Screenshots.RemoveRange(session.Screenshots);
+                _dbContext.SessionForegroundApps.RemoveRange(session.ForegroundApps);
+                _dbContext.SessionBackgroundApps.RemoveRange(session.BackgroundApps);
+
+                _dbContext.Sessions.Remove(session);
+            }
+
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("Successfully deleted all sessions for Employee ID: {EmployeeId}", employeeId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting sessions for Employee ID: {EmployeeId}", employeeId);
+            return false;
+        }
+    }
 
     public async Task<Session?> StartSessionAsync(string employeeId, string projectId)
     {

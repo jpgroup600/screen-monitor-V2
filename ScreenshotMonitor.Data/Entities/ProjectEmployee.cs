@@ -22,6 +22,9 @@ namespace ScreenshotMonitor.Data.Entities
         public User Employee { get; set; }
 
         public TimeSpan TotalActiveTime { get; set; } // Total active time in the project
+
+        public TimeSpan? ScreenshotInterval { get; set; } // Time after which a screenshot should be taken
     }
+
 
 }

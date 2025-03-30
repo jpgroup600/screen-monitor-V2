@@ -1,24 +1,207 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ScreenshotMonitor.Data.Context;
+using ScreenshotMonitor.Data.Dto.Project;
 using ScreenshotMonitor.Data.Entities;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
 
 namespace ScreenshotMonitor.Data.Repositories;
 
+
+
 public class ProjectRepository(
     IConfiguration conf,
     SmDbContext dbContext,
-    ILogger<ProjectRepository> logger
+    ILogger<ProjectRepository> logger,
+    IScreenshotRepository screenshotRepository
 ) : IProjectRepository
 {
+    
+    
     private readonly SmDbContext _dbContext = dbContext;
     private readonly ILogger<ProjectRepository> _logger = logger;
+    
+    public async Task<bool> SetScreenshotIntervalAsync(string projectId, string employeeId, TimeSpan? interval)
+    {
+        try
+        {
+            var projectEmployee = await _dbContext.ProjectEmployees
+                .FirstOrDefaultAsync(pe => pe.ProjectId == projectId && pe.EmployeeId == employeeId);
+
+            if (projectEmployee == null)
+            {
+                _logger.LogWarning("ProjectEmployee not found for ProjectId {ProjectId} and EmployeeId {EmployeeId}", projectId, employeeId);
+                return false;
+            }
+
+            projectEmployee.ScreenshotInterval = interval;
+            await _dbContext.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error setting ScreenshotInterval for ProjectId {ProjectId} and EmployeeId {EmployeeId}", projectId, employeeId);
+            return false;
+        }
+    }
+
+    // ✅ Get Screenshot Interval
+    public async Task<TimeSpan?> GetScreenshotIntervalAsync(string projectId, string employeeId)
+    {
+        try
+        {
+            var interval = await _dbContext.ProjectEmployees
+                .Where(pe => pe.ProjectId == projectId && pe.EmployeeId == employeeId)
+                .Select(pe => pe.ScreenshotInterval)
+                .FirstOrDefaultAsync();
+
+            return interval;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching ScreenshotInterval for ProjectId {ProjectId} and EmployeeId {EmployeeId}", projectId, employeeId);
+            return null;
+        }
+    }
+    public async Task<List<ProjectEmployeeSummaryDto>> GetProjectEmployeesSummaryAsync(string projectId)
+{
+    try
+    {
+        var employees = await _dbContext.ProjectEmployees
+            .Where(pe => pe.ProjectId == projectId)
+            .Select(pe => pe.Employee)
+            .ToListAsync();
+
+        var employeeSummaries = new List<ProjectEmployeeSummaryDto>();
+
+        foreach (var employee in employees)
+        {
+            // Get all sessions of this employee in the project
+            var employeeSessions = await _dbContext.Sessions
+                .Where(s => s.ProjectId == projectId && s.EmployeeId == employee.Id)
+                .Select(s => s.Id) // Only fetch session IDs
+                .ToListAsync();
+
+            string recentScreenshot = null;
+            if (employeeSessions.Any())
+            {
+                var allScreenshots = new List<string>();
+
+                foreach (var sessionId in employeeSessions)
+                {
+                    _logger.LogInformation("Getting screenshot for session {SessionId}", sessionId);
+                    var sessionScreenshots = await screenshotRepository.
+                        FetchScreenshotsBySessionIdAsync(sessionId);
+                    allScreenshots.AddRange(sessionScreenshots);
+                }
+
+                if (!allScreenshots.Any())
+                {
+                    _logger.LogWarning("Screenshots list is empty for employee {EmployeeId} in project {ProjectId}", employee.Id, projectId);
+                }
+                else
+                {
+                    _logger.LogInformation("Found {Count} screenshots for employee {EmployeeId}", allScreenshots.Count, employee.Id);
+
+                    // Debug: Log all file paths found
+                    foreach (var file in allScreenshots)
+                    {
+                        _logger.LogInformation("Screenshot file found: {FilePath}", file);
+                    }
+
+                    // Validate files exist before sorting
+                    var validScreenshots = allScreenshots.Where(File.Exists).ToList();
+
+                    if (!validScreenshots.Any())
+                    {
+                        _logger.LogWarning("No valid screenshot files exist on disk.");
+                    }
+                    else
+                    {
+                        recentScreenshot = validScreenshots
+                            .Select(f => new FileInfo(f))
+                            .OrderByDescending(f => f.CreationTimeUtc)
+                            .FirstOrDefault()?.FullName;
+
+                        _logger.LogInformation("Most recent screenshot: {RecentScreenshot}", recentScreenshot);
+                    }
+                }
+            }
+
+
+
+            // Fetch all session foreground apps for this employee in the project
+            var appUsages = await _dbContext.SessionForegroundApps
+                .Where(a => a.Session.ProjectId == projectId && a.Session.EmployeeId == employee.Id)
+                .Select(a => new 
+                {
+                    a.AppName,
+                    TotalUsageTicks = a.TotalUsageTime.Ticks // Convert to long for processing
+                })
+                .ToListAsync(); // Fetch from DB before processing in memory
+
+// Group by AppName and calculate total usage in memory
+            var topApps = appUsages
+                .GroupBy(a => a.AppName)
+                .Select(g => new 
+                {
+                    Name = g.Key,
+                    UsageTime = TimeSpan.FromTicks(g.Sum(a => a.TotalUsageTicks)) // Safe to sum now
+                })
+                .OrderByDescending(a => a.UsageTime)
+                .Take(3)
+                .ToList();
+
+// Convert TimeSpan to readable format ("4h 23m")
+            var formattedTopApps = topApps.Select(app => new AppUsageDto
+            {
+                Name = app.Name,
+                Usage = $"{(int)app.UsageTime.TotalHours}h {app.UsageTime.Minutes}m"
+            }).ToList();
+            employeeSummaries.Add(new ProjectEmployeeSummaryDto
+            {
+                Id = employee.Id,
+                FullName = employee.FullName,
+                Email = employee.Email,
+                Role = employee.Role,
+                Designation = employee.Designation,
+                PhoneNumber = employee.PhoneNumber,
+                CreatedAt = employee.CreatedAt,
+                TotalOnlineTime = employee.TotalOnlineTime,
+                RecentScreenshot = recentScreenshot,
+                /*
+                RecentScreenshot = recentScreenshot != null ? $"/screenshots/{Path.GetFileName(recentScreenshot)}" : null,
+                */
+                TopApps = formattedTopApps
+            });
+
+            /*employeeSummaries.Add(new ProjectEmployeeSummaryDto
+            {
+                EmployeeId = employee.Id,
+                EmployeeName = employee.FullName,
+                RecentScreenshot = recentScreenshot,
+                /*
+                RecentScreenshot = recentScreenshot != null ? $"/screenshots/{Path.GetFileName(recentScreenshot)}" : null,
+                #1#
+                TopApps = formattedTopApps
+            });*/
+        }
+
+        return employeeSummaries;
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error fetching project employees summary for project {ProjectId}", projectId);
+        throw;
+    }
+}
+
     public async Task<IEnumerable<User>> GetEmployeesByProjectIdAsync(string projectId)
     {
         try

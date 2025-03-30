@@ -25,7 +25,77 @@ public class AdminController(
         var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
         return Ok(claims);
     }
+    
+    private string GetCurrentUsersIdFromClaims()
+    {
+        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("Employee ID not found in claims.");
+    }
+    
+    [HttpGet("user/{userId}/projects-apps-info")]
+    public async Task<IActionResult> GetUserWithProjectsAndTopApps(string userId)
+    {
+        try
+        {
+            var userSummary = await adminRepo.GetUserWithProjectsAndTopAppsAsync(userId);
+            
+            if (userSummary == null)
+            {
+                logger.LogWarning("User with ID {UserId} not found", userId);
+                return NotFound(new { message = "User not found" });
+            }
 
+            return Ok(userSummary);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching user details for UserId {UserId}", userId);
+            return StatusCode(500, new { message = "An error occurred while processing the request" });
+        }
+    }
+    
+    // For Employee to update any USERS PROFILE.
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("update-profile/{userId}")]
+    public async Task<IActionResult> EditUserProfile(string userId, [FromBody] UpdateUserProfileDto updateDto)
+    {
+        var success = await adminRepo.EditUserProfileAsync(userId, updateDto);
+        if (!success)
+        {
+            return BadRequest("Update failed. Ensure at least one valid value is provided.");
+        }
+
+        return Ok("Profile updated successfully.");
+    }
+    
+    // For Employee OR Admin to update their own password.
+    [Authorize(Roles = "Employee,Admin")]
+    [HttpPut("change-own-password")]
+    public async Task<IActionResult> ChangeOwnPassword( [FromBody] ChangePasswordDto changeDto)
+    {
+        var success = await adminRepo.ChangeOwnPasswordAsync(GetCurrentUsersIdFromClaims(), changeDto.OldPassword, changeDto.NewPassword);
+        if (!success)
+        {
+            return BadRequest("Password update failed. Incorrect old password or other error.");
+        }
+
+        return Ok("Password updated successfully.");
+    }
+    
+    // For admin to reset any user's password.
+    [Authorize(Roles = "Admin")]
+    [HttpPut("reset-password/{userId}")]
+    public async Task<IActionResult> ResetUserPassword(string userId,[FromBody] ResetPasswordDto resetDto)
+    {
+        var success = await adminRepo.ResetUserPasswordAsync(GetCurrentUsersIdFromClaims(), userId, resetDto.NewPassword);
+        if (!success)
+        {
+            return BadRequest("Password reset failed.");
+        }
+
+        return Ok("Password reset successfully.");
+    }
+
+    
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto user)
     {

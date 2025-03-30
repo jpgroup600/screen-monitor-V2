@@ -15,6 +15,47 @@ public class ProjectController(
     ILogger<ProjectController> logger
 ) : ControllerBase
 {
+    [Authorize(Roles = "Admin")]
+    // ✅ Set Screenshot Interval (POST)
+    [HttpPost("{projectId}/employee/{employeeId}/screenshot-interval")]
+    public async Task<IActionResult> SetScreenshotInterval(string projectId, string employeeId, [FromBody] ScreenshotIntervalRequest request)
+    {
+        var interval = request.GetTimeSpan();
+
+        if (interval == null)
+        {
+            return BadRequest("Invalid time format. Use 'hh:mm:ss' or 'c' format.");
+        }
+
+        var result = await projectRepo.SetScreenshotIntervalAsync(projectId, employeeId, interval);
+        if (result)
+        {
+            return Ok(new { Message = "Screenshot interval updated successfully" });
+        }
+        return NotFound(new { Message = "ProjectEmployee not found" });
+    }
+    
+    // ✅ Get Screenshot Interval (GET)
+    [HttpGet("{projectId}/employee/{employeeId}/screenshot-interval")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetScreenshotInterval(string projectId, string employeeId)
+    {
+        var interval = await projectRepo.GetScreenshotIntervalAsync(projectId, employeeId);
+        if (interval != null)
+        {
+            return Ok(new { ScreenshotInterval = interval });
+        }
+        return NotFound(new { Message = "Screenshot interval not found" });
+    }
+    
+    [Authorize(Roles = "Admin")]
+    [HttpGet("employees/{projectId}/summary")]
+    public async Task<IActionResult> GetProjectEmployeesSummary(string projectId)
+    {
+        var result = await projectRepo.GetProjectEmployeesSummaryAsync(projectId);
+        return Ok(result);
+    }
+
     // Get Employees by ProjectId
     [HttpGet("employees/{projectId}")]
     [Authorize(Roles = "Admin")]

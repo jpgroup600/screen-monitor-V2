@@ -19,6 +19,21 @@ public class SessionController(
     {
         return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("Employee ID not found in claims.");
     }
+    [HttpDelete("employee/{employeeId}/sessions")]
+    public async Task<IActionResult> DeleteAllSessions(string employeeId)
+    {
+        _logger.LogInformation("Received request to delete all sessions for Employee ID: {EmployeeId}", employeeId);
+
+        var result = await _sessionRepo.DeleteAllSessionsByEmployeeIdAsync(employeeId);
+
+        if (!result)
+        {
+            return NotFound(new { message = "No sessions found for the given employee." });
+        }
+
+        return Ok(new { message = "All sessions deleted successfully." });
+    }
+
     /// <summary>
     /// Start a new session for an employee in a project.
     /// </summary>

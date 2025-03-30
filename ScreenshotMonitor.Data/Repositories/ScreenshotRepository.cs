@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ScreenshotMonitor.Data.Context;
+using ScreenshotMonitor.Data.Dto.Project;
 using ScreenshotMonitor.Data.Dto.Screenshot;
 using ScreenshotMonitor.Data.Entities;
 using ScreenshotMonitor.Data.Interfaces.Repositories;
@@ -33,9 +34,76 @@ public class ScreenshotRepository(
     */
     // Set different paths for Windows and Linux
     
-    private readonly string _storagePath = configuration["FileStorage:UploadPath"] ?? "/var/www/Uploads/";
-    private readonly string _storagePat =configuration["FileStorage:WindowsUploadPath"] ?? @"C:\Users\ahsan\Desktop\ScreenshotMonitor LocalStorage\screenshots";
+    private readonly string _storagePat = configuration["FileStorage:UploadPath"] ?? "/var/www/Uploads/";
+    private readonly string _storagePath =configuration["FileStorage:WindowsUploadPath"] ?? @"C:\Users\ahsan\Desktop\ScreenshotMonitor LocalStorage\screenshots";
+    
+    public async Task<List<EmployeeScreenshotDto>> GetRecentScreenshotsAsync(List<string> employeeIds)
+    {
+        _logger.LogInformation("Fetching most recent screenshots for {Count} employees.", employeeIds.Count);
 
+        var screenshotsList = new List<EmployeeScreenshotDto>();
+
+        foreach (var employeeId in employeeIds)
+        {
+            var employee = await _dbContext.Users
+                .Where(u => u.Id == employeeId)
+                .Select(u => new { u.Id, u.FullName })
+                .FirstOrDefaultAsync();
+
+            if (employee == null)
+            {
+                _logger.LogWarning("Employee with ID {EmployeeId} not found.", employeeId);
+                continue;
+            }
+            
+            
+            /*// Fetch the most recent screenshot for the employee (across all sessions)
+            var recentScreenshot = await _dbContext.Screenshots
+                .Where(s => s.Session.EmployeeId == employeeId)
+                .OrderByDescending(s => s.CapturedAt)
+                .Select(s => new { s.FilePath, s.CapturedAt })
+                .FirstOrDefaultAsync();
+
+            if (recentScreenshot == null)
+            {
+                _logger.LogWarning("No screenshots found for Employee {EmployeeId}.", employeeId);
+                continue;
+            }
+            */
+            // Fetch the most recent screenshot for the employee (across all sessions)
+            var recentScreenshot = await _dbContext.Screenshots
+                .Where(s => s.Session.EmployeeId == employeeId)
+                .OrderByDescending(s => s.CapturedAt)
+                .Select(s => new { s.FilePath, s.CapturedAt })
+                .FirstOrDefaultAsync();
+
+            if (recentScreenshot == null)
+            {
+                _logger.LogWarning("No screenshots found for Employee {EmployeeId}.", employeeId);
+                continue;
+            }
+
+// Convert the relative file path to an absolute path
+            string absoluteFilePath = Path.Combine(_storagePath, Path.GetFileName(recentScreenshot.FilePath));
+
+            _logger.LogInformation("Most recent screenshot for Employee {EmployeeId} is located at {FilePath}.", employeeId, absoluteFilePath);
+
+            screenshotsList.Add(new EmployeeScreenshotDto
+            {
+                EmployeeId = employee.Id,
+                EmployeeName = employee.FullName,
+                ImageFilePath = absoluteFilePath,
+                TimeTaken = recentScreenshot.CapturedAt
+            });
+
+            _logger.LogInformation("Recent screenshot found for Employee {EmployeeId} - File: {FilePath}", 
+                employeeId, recentScreenshot.FilePath);
+        }
+
+        return screenshotsList;
+    }
+
+    
 public async Task<bool> UploadScreenshotDuringSessionAsync(string employeeId, IFormFile image)
 {
     _logger.LogInformation(_storagePath + "UploadScreenshotDuringSession");

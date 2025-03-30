@@ -75,4 +75,61 @@ public class UserActivityHub : Hub
         var onlineUsers = OnlineUsers.Select(u => new { u.Key, Role = u.Value.Role }).ToList();
         await Clients.Caller.SendAsync("ReceiveOnlineUsers", onlineUsers);
     }
+    
+    public async Task ScreenshotTaken(string employeeId)
+    {
+        _logger.LogInformation("Employee {EmployeeId} has uploaded a screenshot.", employeeId);
+
+        // Find all connected admins
+        var adminConnections = OnlineUsers
+            .Where(u => u.Value.Role == "Admin") // Filter users with the Admin role
+            .Select(u => u.Value.ConnectionId) // Get their connection IDs
+            .ToList();
+
+        if (!adminConnections.Any())
+        {
+            _logger.LogWarning("No online admins to notify about the screenshot upload.");
+            return;
+        }
+
+        // Notify all admins
+        foreach (var connectionId in adminConnections)
+        {
+            await Clients.Client(connectionId).SendAsync("ScreenshotUploaded", employeeId);
+        }
+    }
+
+    // **NEW FUNCTIONALITY: Request screenshots from active employees**
+    public async Task RequestScreenshotsFromActiveEmployees()
+    {
+        _logger.LogInformation("Admin initiated screenshot request for active employees.");
+
+        // Fetch active employees from SessionRepository
+        var activeEmployeeIds = await _sessionRepository.GetActiveEmployeeIdsAsync();
+
+        if (!activeEmployeeIds.Any())
+        {
+            _logger.LogWarning("No employees with active sessions found.");
+            return;
+        }
+
+        // Find their SignalR connection IDs
+        var connectionsToNotify = OnlineUsers
+            .Where(u => activeEmployeeIds.Contains(u.Key)) // Filter only active session users
+            .Select(u => u.Value.ConnectionId) // Get their connection IDs
+            .ToList();
+
+        if (!connectionsToNotify.Any())
+        {
+            _logger.LogWarning("No online employees matched with active sessions.");
+            return;
+        }
+
+        // Send request to only those employees
+        foreach (var connectionId in connectionsToNotify)
+        {
+            _logger.LogInformation("Sending screenshot request to connection {ConnectionId}", connectionId);
+            await Clients.Client(connectionId).SendAsync("RequestScreenshot");
+        }
+    }
 }
