@@ -34,8 +34,8 @@ public class ScreenshotRepository(
     */
     // Set different paths for Windows and Linux
     
-    private readonly string _storagePat = configuration["FileStorage:UploadPath"] ?? "/var/www/Uploads/";
-    private readonly string _storagePath =configuration["FileStorage:WindowsUploadPath"] ?? @"C:\Users\ahsan\Desktop\ScreenshotMonitor LocalStorage\screenshots";
+    private readonly string _storagePath = configuration["FileStorage:UploadPath"] ?? "/var/www/Uploads/";
+    //private readonly string _storagePath =configuration["FileStorage:WindowsUploadPath"] ?? @"C:\Users\ahsan\Desktop\ScreenshotMonitor LocalStorage\screenshots";
     
     public async Task<List<EmployeeScreenshotDto>> GetRecentScreenshotsAsync(List<string> employeeIds)
     {
@@ -56,20 +56,6 @@ public class ScreenshotRepository(
                 continue;
             }
             
-            
-            /*// Fetch the most recent screenshot for the employee (across all sessions)
-            var recentScreenshot = await _dbContext.Screenshots
-                .Where(s => s.Session.EmployeeId == employeeId)
-                .OrderByDescending(s => s.CapturedAt)
-                .Select(s => new { s.FilePath, s.CapturedAt })
-                .FirstOrDefaultAsync();
-
-            if (recentScreenshot == null)
-            {
-                _logger.LogWarning("No screenshots found for Employee {EmployeeId}.", employeeId);
-                continue;
-            }
-            */
             // Fetch the most recent screenshot for the employee (across all sessions)
             var recentScreenshot = await _dbContext.Screenshots
                 .Where(s => s.Session.EmployeeId == employeeId)
@@ -221,125 +207,6 @@ public async Task<List<ScreenshotDto>> GetScreenshotsBySessionIdAsync(string ses
     }
 }
 
-    /*public async Task<bool> UploadScreenshotDuringSessionAsync(string employeeId, IFormFile image)
-{
-    try
-    {
-        var session = await _dbContext.Sessions
-            .Where(s => s.EmployeeId == employeeId && s.Status == "Active")
-            .OrderByDescending(s => s.StartTime)
-            .FirstOrDefaultAsync();
-
-        if (session == null)
-        {
-            _logger.LogWarning("No active session found for Employee {EmployeeId}, screenshot upload failed.", employeeId);
-            return false;
-        }
-
-        if (image == null || image.Length == 0)
-        {
-            _logger.LogWarning("Invalid image file received for Employee {EmployeeId}.", employeeId);
-            return false;
-        }
-
-        var allowedExtensions = new HashSet<string> { ".png", ".jpg", ".jpeg" };
-        var fileExtension = Path.GetExtension(image.FileName).ToLowerInvariant();
-
-        if (!allowedExtensions.Contains(fileExtension))
-        {
-            _logger.LogWarning("Unsupported file format {Extension} for Employee {EmployeeId}. Allowed: .png, .jpg, .jpeg", fileExtension, employeeId);
-            return false;
-        }
-
-        string fileName = $"{session.Id}_{DateTime.UtcNow:yyyyMMddHHmmss}{fileExtension}";
-        string filePath = Path.Combine(_storagePath, fileName);
-
-        Directory.CreateDirectory(_storagePath); // Ensure directory exists
-
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await image.CopyToAsync(stream);
-        }
-
-        var screenshot = new Screenshot
-        {
-            Id = Guid.NewGuid().ToString(),
-            SessionId = session.Id,
-            FilePath = filePath,
-            CapturedAt = DateTime.UtcNow
-        };
-
-        _dbContext.Screenshots.Add(screenshot);
-        await _dbContext.SaveChangesAsync();
-
-        _logger.LogInformation("Screenshot uploaded successfully for Employee {EmployeeId} in Session {SessionId}.", employeeId, session.Id);
-        return true;
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Error uploading screenshot for Employee {EmployeeId}.", employeeId);
-        return false;
-    }
-}*/
-
-    
-    /*public async Task<List<string>> FetchScreenshotsBySessionIdAsync(string sessionId)
-    {
-        try
-        {
-            string sessionPath = "C:\\Users\\ahsan\\Desktop\\ScreenshotMonitor LocalStorage\\screenshots";
-
-            if (!Directory.Exists(sessionPath))
-            {
-                return new List<string>(); // Return empty if directory doesn't exist
-            }
-
-            // Get all images matching the sessionId with extensions png, jpg, jpeg
-            var imageFiles = Directory.GetFiles(sessionPath)
-                .Where(file => Path.GetFileName(file).StartsWith(sessionId) &&
-                               (file.EndsWith(".png") || file.EndsWith(".jpg") || file.EndsWith(".jpeg")))
-                .ToList();
-
-            return imageFiles;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching screenshots for session: {SessionId}", sessionId);
-            throw;
-        }
-    }
-
-    public async Task<List<ScreenshotDto>> GetScreenshotsBySessionIdAsync(string sessionId)
-    {
-        try
-        {
-            // The directory where all screenshots are stored
-            if (!Directory.Exists(_storagePath))
-            {
-                _logger.LogWarning("No screenshot directory found at: {StoragePath}", _storagePath);
-                return new List<ScreenshotDto>();
-            }
-
-            // Search for images in the main directory that start with sessionId
-            var imageFiles = Directory.GetFiles(_storagePath, $"{sessionId}_*.*") // Match sessionId prefix
-                .Where(file => file.EndsWith(".png") || file.EndsWith(".jpg") || file.EndsWith(".jpeg"))
-                .Select(file => new ScreenshotDto()
-                {
-                    FilePath = file, // Full file path
-                    FileName = Path.GetFileName(file), // Extract filename only
-                    CreatedAt = File.GetCreationTime(file) // Get creation time
-                })
-                .ToList();
-
-            _logger.LogInformation("Fetched {Count} screenshots for session: {SessionId}", imageFiles.Count, sessionId);
-            return imageFiles;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error fetching screenshots for session: {SessionId}", sessionId);
-            throw;
-        }
-    }*/
 
 
 // Helper method to get MIME type

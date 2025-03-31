@@ -23,6 +23,11 @@ var config = builder.Configuration;
 
 builder.Services.AddDbContext<SmDbContext>(options => options.UseNpgsql(config.GetConnectionString("SmDb")!));
 
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options=>
+{
+    options.MultipartBodyLengthLimit = 100*1024*1024;
+});
+
 builder.Services.AddScoped<DbContext, SmDbContext>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
