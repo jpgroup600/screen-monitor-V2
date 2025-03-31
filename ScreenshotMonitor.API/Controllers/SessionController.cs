@@ -19,7 +19,29 @@ public class SessionController(
     {
         return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("Employee ID not found in claims.");
     }
-    [HttpDelete("employee/{employeeId}/sessions")]
+    
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("employee/{employeeId}/delete-project-sessions/{projectId}")]
+    public async Task<IActionResult> DeleteEmployeeSessionsInProject(string employeeId, string projectId)
+    {
+        if (string.IsNullOrWhiteSpace(employeeId) || string.IsNullOrWhiteSpace(projectId))
+        {
+            _logger.LogWarning("Invalid Employee ID or Project ID provided.");
+            return BadRequest("Employee ID and Project ID are required.");
+        }
+
+        var result = await _sessionRepo.DeleteSessionsByEmployeeInProjectAsync(employeeId, projectId);
+
+        if (!result)
+        {
+            return NotFound($"No sessions found for Employee {employeeId} in Project {projectId}.");
+        }
+
+        return Ok($"Sessions for Employee {employeeId} in Project {projectId} have been deleted successfully.");
+    }
+    
+    [Authorize(Roles = "Admin")]
+    [HttpDelete("employee/{employeeId}/sessions-delete-all")]
     public async Task<IActionResult> DeleteAllSessions(string employeeId)
     {
         _logger.LogInformation("Received request to delete all sessions for Employee ID: {EmployeeId}", employeeId);

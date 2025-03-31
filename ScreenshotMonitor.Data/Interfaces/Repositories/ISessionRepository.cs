@@ -6,6 +6,7 @@ namespace ScreenshotMonitor.Data.Interfaces.Repositories;
 
 public interface ISessionRepository
 {
+    Task<bool> DeleteSessionsByEmployeeInProjectAsync(string employeeId, string projectId);
     Task<List<string>> GetActiveEmployeeIdsAsync();
     Task<bool> DeleteAllSessionsByEmployeeIdAsync(string employeeId);
     Task<Session> StartSessionAsync(string employeeId, string projectId);

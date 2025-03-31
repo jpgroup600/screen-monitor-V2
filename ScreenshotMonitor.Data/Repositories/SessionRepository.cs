@@ -35,6 +35,47 @@ public class SessionRepository(
 
         return activeEmployeeIds;
     }
+    public async Task<bool> DeleteSessionsByEmployeeInProjectAsync(string employeeId, string projectId)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting sessions for Employee ID: {EmployeeId} in Project ID: {ProjectId}", employeeId, projectId);
+
+            var sessions = await _dbContext.Sessions
+                .Where(s => s.EmployeeId == employeeId && s.ProjectId == projectId)
+                .Include(s => s.Screenshots)
+                .Include(s => s.ForegroundApps)
+                .Include(s => s.BackgroundApps)
+                .ToListAsync();
+
+            if (sessions == null || !sessions.Any())
+            {
+                _logger.LogWarning("No sessions found for Employee ID: {EmployeeId} in Project ID: {ProjectId}", employeeId, projectId);
+                return false;
+            }
+
+            foreach (var session in sessions)
+            {
+                _logger.LogInformation("Deleting session ID: {SessionId} in Project ID: {ProjectId}", session.Id, projectId);
+
+                _dbContext.Screenshots.RemoveRange(session.Screenshots);
+                _dbContext.SessionForegroundApps.RemoveRange(session.ForegroundApps);
+                _dbContext.SessionBackgroundApps.RemoveRange(session.BackgroundApps);
+            
+                _dbContext.Sessions.Remove(session);
+            }
+
+            await _dbContext.SaveChangesAsync();
+            _logger.LogInformation("Successfully deleted sessions for Employee ID: {EmployeeId} in Project ID: {ProjectId}", employeeId, projectId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting sessions for Employee ID: {EmployeeId} in Project ID: {ProjectId}", employeeId, projectId);
+            return false;
+        }
+    }
+
     public async Task<bool> DeleteAllSessionsByEmployeeIdAsync(string employeeId)
     {
         try
