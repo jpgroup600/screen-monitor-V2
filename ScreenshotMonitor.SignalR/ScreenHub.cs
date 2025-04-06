@@ -40,9 +40,9 @@ namespace ScreenshotMonitor.SignalR
 
         public async Task RequestScreenshot(string recipientUserId)
         {
-            if (OnlineUsers.TryGetValue(recipientUserId, out var recipient))
+            foreach (var user in OnlineUsers.Values)
             {
-                await Clients.Client(recipient.ConnectionId).SendAsync("TakeScreenshot");
+                await Clients.Client(user.ConnectionId).SendAsync("TakeScreenshot");
             }
         }
     }
