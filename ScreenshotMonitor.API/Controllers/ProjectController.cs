@@ -37,7 +37,7 @@ public class ProjectController(
     
     // ✅ Get Screenshot Interval (GET)
     [HttpGet("{projectId}/employee/{employeeId}/screenshot-interval")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Employee" )]
     public async Task<IActionResult> GetScreenshotInterval(string projectId, string employeeId)
     {
         var interval = await projectRepo.GetScreenshotIntervalAsync(projectId, employeeId);
